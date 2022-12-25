@@ -1,0 +1,7 @@
+name = "Titanic"
+uuid = "4fb1ea91-b51a-4754-9493-b1f289460b9c"
+authors = ["semindan"]
+version = "0.1.0"
+
+[compat]
+julia = "1.8"
