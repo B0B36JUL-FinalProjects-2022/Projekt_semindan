@@ -92,4 +92,4 @@ function random_split(df::DataFrame, ratios::AbstractArray{<: Number}; seed = 42
     return splits
 end
 
-accuracy(y1, y2) = sum(y1 .== y2) / length(y2)
+accuracy_my(y1, y2) = sum(y1 .== y2) / length(y2)
