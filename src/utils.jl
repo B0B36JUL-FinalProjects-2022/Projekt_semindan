@@ -6,6 +6,8 @@ end
 
 replace_eq(value::Any, src::Missing, dst::Any) = ismissing(value) ? dst : value # coalesce
 replace_eq(value::Any, src::Any, dst::Any) = value == src ? dst : value
+replace_eq(value::Any, src::AbstractArray, dst::Any) = !isnothing(findfirst(entry -> entry == value, src)) ? dst : value # many-to-one 
+replace_eq(value::Any, src::AbstractArray, dst::AbstractArray) = !isnothing(findfirst(entry -> entry == value, src)) ? dst[findfirst(entry -> entry == value, src)] : value # many-to-many
 
 function replace_in_cols(df::DataFrame,
                          cols::Union{String,Symbol,Vector{<:Union{String,Symbol}}},
@@ -85,11 +87,20 @@ function random_split(df::DataFrame, ratios::AbstractArray{<: Number}; seed = 42
     splits = []
     rest = copy(df_shuffled)
     for ratio in ratios
-        split = rest[begin:Int(floor(ratio*nrow(df))), :]
-        rest = rest[(Int(floor(ratio*nrow(df))) + 1):end, :] 
+        split = rest[begin:Int(floor(ratio * nrow(df))), :]
+        rest = rest[(Int(floor(ratio * nrow(df))) + 1):end, :] 
         splits = vcat(splits, split)
     end
     return splits
+end
+
+
+function onehot(data, classes)
+    data_onehot = falses(length(data), length(classes))
+    for (i, class) in enumerate(classes)
+        data_onehot[data .== class, i] .= 1
+    end
+    return data_onehot
 end
 
 accuracy_my(y1, y2) = sum(y1 .== y2) / length(y2)

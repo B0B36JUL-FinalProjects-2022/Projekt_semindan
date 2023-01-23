@@ -35,7 +35,11 @@ export read_csv_data,
        logistic_loss_grad,
        train,
        to_batches,
-       Args
+       Args,
+       build_node,
+       Decision_tree,
+       gini,
+       onehot
 
 include("utils.jl")
 include("models.jl")

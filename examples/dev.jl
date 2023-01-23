@@ -6,36 +6,63 @@ using Statistics
 using StatsBase
 
 df = read_csv_data("data/train.csv")
-knn = K_nn(;n=2, metric="l2")
+
 col_median = apply_to_cols(df, :Age, median)
 df = replace_in_cols(df, :Age, missing, col_median)
-trn, val, tst = random_split(df, [0.5, 0.3, 0.2])
-val_X, val_y = val[!, [:Fare, :Age]], val[!, :Survived]
-Matrix(val_X)
-val_y
-logistic_loss_grad(Matrix(val_X)', val_y, [1.0,1.0])
-X = Matrix(val_X)
-y = val_y
-w = [1.0, 1.0]
+
+col_city = apply_to_cols(df, :Embarked, most_common)
+df = replace_in_cols(df, :Embarked, missing, col_city)
+
+df = replace_in_cols(df, :Cabin, missing, "N") 
+col_cabin = apply_to_cols(df, :Cabin, strip_cabin_numbers)
+df[!, :Cabin] = col_cabin
+
+groups = get_title_groups()
+df = replace_names_with_title_categories(df, groups)
+
+df = categorize(df)
 
 
-X = [[1 1 1];[1 2 3]]
-y = [1, -1, -1]
-w = [1.5, -0.5]
--length(y)^-1 * ((1 ./ (1 .+ exp.(y .* (X' * w))))' * (X' .*  y))'
+dt = Decision_tree()
+dt
+dt.root.left
 
+trn, val, tst = random_split(df, [0.6, 0.2, 0.2])
+y = trn[!, :Survived]
+X = Matrix(Matrix(trn[!, Not(:Survived)])')
+orig_entropy = gini(y)
+left, left_labels, right, right_labels, feature, gain, t = build_node(X, y, orig_entropy)
+left
+left_labels
+right
+right_labels
+y
+X
+Matrix(Matrix(X)')
+Matrix(Matrix(X)')
+gain
+unique(trn[!, :Age])
 
+onehot(trn[!, :Sex], unique(trn[!, :Sex]))
 
+model_fit(dt, X, y)
+dt.root.
 
+left, right, feature, gain = build_node(df)
+countmap(a)
 
+X = df
 
-
-
-logreg = Log_reg()
-Matrix(val_X)
-
-trn_X, trn_y = trn[!, [:Fare, :Age]], trn[!, :Survived]
-w, wt = model_fit(logreg, trn_X, trn_y)
-w
-val_y
-accuracy(model_predict(logreg, val_X), val_y)
+    root = X[!, :Survived]
+    best_gain = -1
+    best_feature = nothing
+    best_children = []
+    for feature in eachcol(X)
+        left, right = split_by_function(feature, feature_func)
+        if (cur_gain = information_gain(root, [left, right], criterion)) > best_gain
+            best_children = [left, right]
+            best_gain = cur_gain
+            best_feature = feature
+        end
+    end
+    best_children[begin], best_children[end]
