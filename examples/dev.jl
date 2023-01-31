@@ -1,9 +1,14 @@
+1+1
 using Revise
 using Titanic
 using DataFrames
 using DataStructures
 using Statistics
 using StatsBase
+using Flux
+using Flux, Statistics
+using Flux.Data: DataLoader
+using Flux: onehotbatch, onecold, logitcrossentropy, throttle, @epochs
 
 df = read_csv_data("data/train.csv")
 
@@ -22,14 +27,65 @@ df = replace_names_with_title_categories(df, groups)
 
 df = categorize(df)
 
+survived = df[!, :Survived]
+df = standartize(df)
+df.Survived = survived
 
-dt = Decision_tree()
-dt
-dt.root.left
+dt = Decision_tree(max_depth=5)
 
 trn, val, tst = random_split(df, [0.6, 0.2, 0.2])
 y = trn[!, :Survived]
-X = Matrix(Matrix(trn[!, Not(:Survived)])')
+X = trn[!, Not(:Survived)]
+# X = Matrix(Matrix(trn[!, Not(:Survived)])')
+
+tst_y = tst[!, :Survived]
+tst_X = tst[!, Not(:Survived)]
+
+nn = Neural_network()
+
+# y[y .== -1] .= 0
+
+X[!, :Target] = y
+trn, val = random_split(X, [0.6, 0.4])
+batched_trn = batch(Matrix(trn[!, Not(:Target)])', trn[!, :Target], nn.args)
+batched_trn
+trn
+
+for (x,y) in batched_trn
+    println(onecold(y))
+    break
+end
+
+collect(Iterators.flatten(map(pair -> onecold(pair[end]), batched_trn)))
+
+model_fit(nn, X, y)
+preds = model_predict(nn, tst_X)
+preds = model_predict(knn, tst_X)
+
+knn = K_nn()
+model_fit(knn, X, y)
+preds = model_predict(knn, tst_X)
+knn.train_data_X
+countmap(preds)
+countmap(y)
+
+logreg = Log_reg()
+model_fit(logreg, X, y)
+preds = model_predict(logreg, tst_X)
+preds[preds .== -1] .= 0
+
+dt
+model_fit(dt, X, y)
+dt.root.feature_name
+tst
+tst_X = Matrix(Matrix(tst[!, Not(:Survived)])')
+preds = model_predict(dt, tst)
+accuracy_my(tst[!, :Survived], preds)
+tst
+
+
+dt.root.left.left.label
+dt.root.label
 orig_entropy = gini(y)
 left, left_labels, right, right_labels, feature, gain, t = build_node(X, y, orig_entropy)
 left
@@ -66,3 +122,25 @@ X = df
         end
     end
     best_children[begin], best_children[end]
+
+
+data=df
+col= :Name
+
+i = 1
+class = 0
+function to_onehot(data, col)
+    classes = unique(data[!, col])
+    data_onehot = falses(nrow(data), length(unique(data[!, col])))
+    for (i, class) in enumerate(classes)
+        data_onehot[data[!, col] .== class, i] .= 1
+        data[!, string(col, "_", class)] = data_onehot[:, i]
+    end
+    return data
+end
+length(unique(df[!, :Name]))
+nrow(df)
+to_onehot(df, :Name)
+dff = DataFrame(b = zeros(891))
+hcat(df, dff)
+df[!, Not([:a, :Name, :Age])]

@@ -2,7 +2,7 @@
 
 julia_version = "1.8.5"
 manifest_format = "2.0"
-project_hash = "630f5b9f0ded9f406dfcddd8c57808c3e4a7ccb2"
+project_hash = "d22ede058e4c42efe4fc67573a82bf7fca07ff6b"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra"]
@@ -427,9 +427,9 @@ version = "0.8.4"
 
 [[deps.Flux]]
 deps = ["Adapt", "CUDA", "ChainRulesCore", "Functors", "LinearAlgebra", "MLUtils", "MacroTools", "NNlib", "NNlibCUDA", "OneHotArrays", "Optimisers", "ProgressLogging", "Random", "Reexport", "SparseArrays", "SpecialFunctions", "Statistics", "StatsBase", "Zygote"]
-git-tree-sha1 = "96e29bb33cc05cc053751b1299f84e6b34cb7afd"
+git-tree-sha1 = "518b553ec3776dde058aebd2750c109d04ee5593"
 uuid = "587475ba-b771-5e3f-ad9e-33799f191a9c"
-version = "0.13.10"
+version = "0.13.11"
 
 [[deps.FoldsThreads]]
 deps = ["Accessors", "FunctionWrappers", "InitialValues", "SplittablesBase", "Transducers"]

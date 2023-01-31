@@ -1,25 +1,32 @@
 
 function read_csv_data(name::String)
     ispath(name) || throw(ErrorException("Invalid data path"))
-    return CSV.read(name, DataFrame; header=true)
+    return CSV.read(name, DataFrame; header = true)
 end
 
 replace_eq(value::Any, src::Missing, dst::Any) = ismissing(value) ? dst : value # coalesce
 replace_eq(value::Any, src::Any, dst::Any) = value == src ? dst : value
-replace_eq(value::Any, src::AbstractArray, dst::Any) = !isnothing(findfirst(entry -> entry == value, src)) ? dst : value # many-to-one 
-replace_eq(value::Any, src::AbstractArray, dst::AbstractArray) = !isnothing(findfirst(entry -> entry == value, src)) ? dst[findfirst(entry -> entry == value, src)] : value # many-to-many
+replace_eq(value::Any, src::AbstractArray, dst::Any) =
+    !isnothing(findfirst(entry -> entry == value, src)) ? dst : value # many-to-one 
+replace_eq(value::Any, src::AbstractArray, dst::AbstractArray) =
+    !isnothing(findfirst(entry -> entry == value, src)) ?
+    dst[findfirst(entry -> entry == value, src)] : value # many-to-many
 
-function replace_in_cols(df::DataFrame,
-                         cols::Union{String,Symbol,Vector{<:Union{String,Symbol}}},
-                         src::Any,
-                         dst::Any)
+function replace_in_cols(
+    df::DataFrame,
+    cols::Union{String,Symbol,Vector{<:Union{String,Symbol}}},
+    src::Any,
+    dst::Any,
+)
     return transform(df, cols .=> ByRow(entry -> replace_eq(entry, src, dst)) .=> cols)
 end
 
-function replace_in_cols!(df::DataFrame,
-                          cols::Union{String,Symbol,Vector{<:Union{String,Symbol}}},
-                          src::Any,
-                          dst::Any)
+function replace_in_cols!(
+    df::DataFrame,
+    cols::Union{String,Symbol,Vector{<:Union{String,Symbol}}},
+    src::Any,
+    dst::Any,
+)
     return transform!(df, cols .=> ByRow(entry -> replace_eq(entry, src, dst)) .=> cols)
 end
 
@@ -31,10 +38,10 @@ function replace_in_cols!(df::DataFrame, src::Any, dst::Any)
 end
 
 function categorize(df::DataFrame, cols::Vector{<:Union{String,Symbol}})
-    return transform(df,
-                     cols .=>
-                         (col -> map(entry -> col_to_categorical(col, entry), col)) .=>
-                             cols)
+    return transform(
+        df,
+        cols .=> (col -> map(entry -> col_to_categorical(col, entry), col)) .=> cols,
+    )
 end
 
 categorize(df::DataFrame) = categorize(df, names(df))
@@ -45,8 +52,10 @@ end
 col_to_categorical(col::AbstractArray, value::Number) = value
 
 function standartize(df::DataFrame, cols::Vector{<:Union{String,Symbol}})
-    return transform(df,
-                     cols .=> (col -> map(entry -> col_to_norm(col, entry), col)) .=> cols)
+    return transform(
+        df,
+        cols .=> (col -> map(entry -> col_to_norm(col, entry), col)) .=> cols,
+    )
 end
 
 col_to_norm(col::AbstractArray{<:Number}, value::Number) = (value - mean(col)) / std(col)
@@ -74,21 +83,27 @@ end
 
 function replace_names_with_title_categories(df, groups)
     for group in groups
-        transform!(df,
-                   :Name => ByRow(entry -> any(occursin.(group[begin], entry)) ? group[end] : entry) => :Name)
+        transform!(
+            df,
+            :Name =>
+                ByRow(entry -> any(occursin.(group[begin], entry)) ? group[end] : entry) =>
+                    :Name,
+        )
     end
     return df
 end
 
-function random_split(df::DataFrame, ratios::AbstractArray{<: Number}; seed = 42)
-    all(0.0 .<= ratios .<= 1.0) || 0.0 < sum(ratios) <= 1.0 || throw(ErrorException("Invalid size ratios"))
+function random_split(df::DataFrame, ratios::AbstractArray{<:Number}; seed = 42)
+    all(0.0 .<= ratios .<= 1.0) ||
+        0.0 < sum(ratios) <= 1.0 ||
+        throw(ErrorException("Invalid size ratios"))
     rng = MersenneTwister(seed)
     df_shuffled = shuffle(rng, df)
     splits = []
     rest = copy(df_shuffled)
     for ratio in ratios
         split = rest[begin:Int(floor(ratio * nrow(df))), :]
-        rest = rest[(Int(floor(ratio * nrow(df))) + 1):end, :] 
+        rest = rest[(Int(floor(ratio * nrow(df)))+1):end, :]
         splits = vcat(splits, split)
     end
     return splits
@@ -98,9 +113,24 @@ end
 function onehot(data, classes)
     data_onehot = falses(length(data), length(classes))
     for (i, class) in enumerate(classes)
-        data_onehot[data .== class, i] .= 1
+        data_onehot[data.==class, i] .= 1
     end
     return data_onehot
 end
 
+
+function to_onehot(data, col)
+    classes = unique(data[!, col])
+    data_onehot = falses(nrow(data), length(unique(data[!, col])))
+    for (i, class) in enumerate(classes)
+        data_onehot[data[!, col] .== class, i] .= 1
+        data[!, string(col, "_", class)] = data_onehot[:, i]
+    end
+    return data
+end
+
+
 accuracy_my(y1, y2) = sum(y1 .== y2) / length(y2)
+function accuracy_my(predictions, dataloader::DataLoader)
+
+end

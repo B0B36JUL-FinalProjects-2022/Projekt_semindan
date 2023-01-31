@@ -1,12 +1,14 @@
 using Titanic
 using Test
+using DataFrames
 
 @testset "Titanic.jl" begin
     df = DataFrame(;
-                   A=10:30,
-                   B=50:70,
-                   C=vcat([missing], collect(range(1, 18)), [missing, 2]),
-                   D=rand(["a", "b"], 21))
+        A = 10:30,
+        B = 50:70,
+        C = vcat([missing], collect(range(1, 18)), [missing, 2]),
+        D = rand(["a", "b"], 21),
+    )
     @testset "Read CSV" begin
         @test_throws ErrorException read_csv_data("train.csv")
     end
@@ -19,6 +21,13 @@ using Test
         end
         @testset "Categorization" begin
             @test sort(unique(categorize(df, :D)[!, :D])) == [0, 1]
+        end
+    end
+
+    @testset "Models" begin
+        @testset "K_nn" begin
+            @test_throws ErrorException K_nn(n = 0)
+            @test_throws ErrorException K_nn(metric= what)
         end
     end
 end
