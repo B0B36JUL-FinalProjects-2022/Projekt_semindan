@@ -1,0 +1,13 @@
+using Revise
+using Titanic
+
+df = read_data("data")
+replace.(eachcol(df), "?"=>missing)
+eachcol(df)
+type(df)
+ifelse.(df .== "None", missing, df)
+ifelse(df .== "None", "a", "b")
+df .= ifelse.(df .== "c", "None", df)
+
+for 
+replace(df[!, "Name"], "Mr." => "a")

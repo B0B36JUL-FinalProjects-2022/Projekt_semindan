@@ -1,4 +1,4 @@
-1+1
+1 + 1
 using Revise
 using Titanic
 using DataFrames
@@ -18,7 +18,7 @@ df
 col_city = apply_to_cols(df, :Embarked, most_common)
 df = replace_in_cols(df, :Embarked, missing, col_city)
 
-df = replace_in_cols(df, :Cabin, missing, "N") 
+df = replace_in_cols(df, :Cabin, missing, "N")
 col_cabin = apply_to_cols(df, :Cabin, strip_cabin_numbers)
 df[!, :Cabin] = col_cabin
 
@@ -27,12 +27,12 @@ df = replace_names_with_title_categories(df, groups)
 
 df = categorize(df)
 df = df[!, Not(:PassengerId)]
-df = to_onehot(df; remove_original=true)
+df = to_onehot(df; remove_original = true)
 survived = df[!, :Survived]
 df = standartize(df)
 df.Survived = survived
 
-dt = Decision_tree(max_depth=15)
+dt = Decision_tree(max_depth = 15)
 
 trn, val, tst = random_split(df, [0.6, 0.2, 0.2])
 y = trn[!, :Survived]
@@ -82,4 +82,3 @@ accuracy(tst[!, :Survived], preds)
 preds = model_predict(dt, X)
 accuracy(trn[!, :Survived], preds)
 tst
-
