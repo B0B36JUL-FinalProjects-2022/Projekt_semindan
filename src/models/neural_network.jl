@@ -28,7 +28,7 @@ end
 
 function model_fit!(model::Neural_network, X::DataFrame, y::AbstractArray; verbose = false)
     X[!, :Target] = y
-    trn, val = random_split(X, model.ratios)
+    trn, val = random_split(X, model.args.ratios)
     model_fit!(model,
                trn[!, Not(:Target)],
                trn[!, :Target],

@@ -27,7 +27,6 @@ df = replace_names_with_title_categories(df, groups)
 
 df = categorize(df)
 df = df[!, Not(:PassengerId)]
-df = to_onehot(df; remove_original = true)
 survived = df[!, :Survived]
 df = standartize(df)
 df.Survived = survived
@@ -44,7 +43,7 @@ tst_X = tst[!, Not(:Survived)]
 
 model_fit!(dt, X, y)
 preds = model_predict(dt, tst_X)
-
+accuracy(tst[!, :Survived], preds)
 nn = Neural_network()
 
 # y[y .== -1] .= 0
@@ -61,14 +60,14 @@ preds = model_predict(nn, tst_X)
 preds = model_predict(knn, tst_X)
 
 knn = K_nn()
-model_fit(knn, X, y)
+model_fit!(knn, X, y)
 preds = model_predict(knn, tst_X)
 knn.train_data_X
 countmap(preds)
 countmap(y)
 
 logreg = Log_reg()
-model_fit(logreg, X, y)
+model_fit!(logreg, X, y)
 preds = model_predict(logreg, tst_X)
 preds[preds .== -1] .= 0
 
@@ -78,7 +77,6 @@ dt.root.feature_name
 tst
 tst_X = Matrix(Matrix(tst[!, Not(:Survived)])')
 preds = model_predict(dt, tst)
-accuracy(tst[!, :Survived], preds)
 preds = model_predict(dt, X)
 accuracy(trn[!, :Survived], preds)
 tst
