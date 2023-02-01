@@ -1,13 +1,17 @@
 abstract type Model end
 
-function model_fit end
+@doc """
+    model_fit!(model, X, y)
+    
+trains the model on the provided data
+"""
+function model_fit! end
+@doc """
+    model_predict(model, X)
+    
+makes a prediction on the data using the provided model
+"""
 function model_predict end
-
-# function model_fit(model::T, X::DataFrame, y::AbstractArray) where T <: Model
-#     # size(X)[2] == length(y) || throw(ErrorException("X must be of shape (features, entries), i.e. (features, $(length(y))), found (features, $(size(X)[2]))"))
-#     # model_fit(model, Matrix(Matrix(X)'), y)
-#     # model_fit(model, Matrix(Matrix(X)'), y)
-# end
 
 @enum Metric l1 l2 lmax
 
@@ -20,14 +24,14 @@ mutable struct K_nn <: Model
         n <= 0 && throw(ErrorException("n must be positive"))
         model = new(n, metric)
         isnothing(findfirst(==(metric), instances(Metric))) && throw(ErrorException("Invalid metric"))
-        !isnothing(train_data_X) && !isnothing(train_data_y) && model_fit(model, train_data_X, train_data_y)
+        !isnothing(train_data_X) && !isnothing(train_data_y) && model_fit!(model, train_data_X, train_data_y)
         model
     end
 end
 
-function model_fit(model::K_nn, X::Matrix, y::AbstractArray)
-    size(X)[2] == length(y) || throw(ErrorException("X must be of shape (features, entries), i.e. (features, $(length(y))), found (features, $(size(X)[2]))"))
-    model.train_data_X = X
+function model_fit!(model::K_nn, X::DataFrame, y::AbstractArray)
+    nrow(X) == length(y) || throw(ErrorException("Number of X's rows must be equal to length(y), i.e. $(length(y)), found $(nrow(X))"))
+    model.train_data_X = Matrix(Matrix(X)')
     model.train_data_y = y
 end
 
@@ -60,20 +64,16 @@ mutable struct Log_reg <: Model
 end
 
 
-# model_fit(model::Log_reg, X::DataFrame, y::AbstractArray, w_init; args...) = model_fit(model, Matrix(Matrix(X)'), y, w_init)
-function model_fit(
+function model_fit!(
     model::Log_reg,
-    X::Matrix,
+    X::DataFrame,
     y::AbstractArray
 )
-    # y = replace(y, 0 => -1)
-    y[y .== 0] .= -1
-    # w, L, g = w_init, logistic_loss(X, y, w_init), logistic_loss_grad(X, y, w_init)
-    # wt, Lt = Matrix(w'), [L]
-    diff = Inf
-    f = w -> logistic_loss(X,y,w)
-    g = w -> logistic_loss_grad(X,y,w)
-    w = ones(size(X)[1])
+    X_matrix = Matrix(Matrix(X)')
+    y_minus_plus = replace(y, 0 => -1)
+    f = w -> logistic_loss(X_matrix,y_minus_plus,w)
+    g = w -> logistic_loss_grad(X_matrix,y_minus_plus,w)
+    w = ones(size(X_matrix)[1])
     model.w = gradient_descent(f, g, w; lr=model.lr, max_iter=model.max_iter)
 end
 
@@ -83,30 +83,6 @@ function gradient_descent(f, g, w; lr=0.01, max_iter=10000)
     end
     return w
 end
-
-    # y[y .== 0] = -1
-    # w, L, g = w_init, logistic_loss(X, y, w_init), logistic_loss_grad(X, y, w_init)
-    # wt, Lt = Matrix(w'), [L]
-    # diff = Inf
-    # for i = 1:max_iter
-    #     diff <= epsilon && break
-    #     w_new = w - lr * g
-    #     L_new, g_new = logistic_loss(X, y, w_new), logistic_loss_grad(X, y, w_new)
-    #     if L_new < L
-    #         wt = vcat(wt, w_new')
-    #         Lt = vcat(Lt, L_new)
-    #         w, L, g = w_new, L_new, g_new
-    #         lr *= 2
-    #     else
-    #         lr /= 2
-    #     end
-
-    #     if size(wt)[begin] > 1
-    #         diff = norm(wt[end, :] - wt[end-1, :])
-    #     end
-    # end
-    # model.w = w
-    # return w, wt, Lt
 
 function model_predict(model::Log_reg, tst::DataFrame)
     return replace(map(sign, Matrix(tst) * model.w), -1 => 0)
@@ -122,36 +98,37 @@ mutable struct Neural_network <: Model
 end
 
 @with_kw mutable struct Args
-    η::Float64 = 3e-4       # learning rate
-    batchsize::Int = 64   # batch size
-    epochs::Int = 10        # number of epochs
-    device::Function = cpu  # set as gpu, if gpu available
+    lr::Float64 = 3e-4
+    batchsize::Int = 64 
+    epochs::Int = 30
+    ratios::AbstractArray = [0.8, 0.2]
+    device::Function = cpu
 end
 
 
-function model_fit(model::Neural_network, X::DataFrame, y::AbstractArray)
+function model_fit!(model::Neural_network, X::DataFrame, y::AbstractArray, X_val::DataFrame, y_val::AbstractArray; verbose = false)
+    batched_trn = batch(Matrix(X)', y, model.args)
+    batched_val = batch(Matrix(X_val)', y_val, model.args)
+    isnothing(model.m) && (model.m = build_model(length(names(X))))
+    train(model, batched_trn, batched_val, model.args; verbose = verbose)
+end
+
+function model_fit!(model::Neural_network, X::DataFrame, y::AbstractArray; verbose = false)
     X[!, :Target] = y
-    trn, val = random_split(X, [0.6, 0.4])
-    batched_trn = batch(Matrix(trn[!, Not(:Target)])', trn[!, :Target], model.args)
-    batched_val = batch(Matrix(val[!, Not(:Target)])', val[!, :Target], model.args)
-    model.m = build_model(length(names(X)) - 1)
-    train(model, batched_trn, batched_val, model.args)
+    trn, val = random_split(X, model.ratios)
+    model_fit!(model, trn[!, Not(:Target)],trn[!, :Target], val[!, Not(:Target)], val[!, :Target]; verbose = verbose)
 end
 
 function model_predict(model::Neural_network, tst::DataFrame)
     batched_tst = batch(Matrix(tst)', zeros(nrow(tst)),model.args)
-    predictions = []
-    for (x, y) in batched_tst
-        append!(predictions, onecold(cpu(model.m(x))))
-    end
-    return predictions .- 1
+    return model_predict(model, batched_tst)
 end
 
 
-function model_predict(model::Neural_network, tst::DataLoader)
+function model_predict(model::Neural_network, tst)
     predictions = []
     for (x, y) in tst
-        append!(predictions, onecold(cpu(model.m(x))))
+        predictions = vcat(predictions, onecold(cpu(model.m(x))))
     end
     return predictions .- 1
 end
@@ -171,28 +148,21 @@ function loss_all(dataloader, model)
     mean(map(pair -> logitcrossentropy(model(pair[begin]), pair[end], dims=1), dataloader))
 end
 
+labels_from_batched(batched_data) = collect(Iterators.flatten(map(pair -> onecold(pair[end]), batched_data))) .- 1
 
-function nn_accuracy(dataloader, model)
-    acc = 0
-    for (x, y) in dataloader
-        acc += sum(onecold(cpu(model(x))) .== onecold(cpu(y))) * 1 / size(x, 2)
-    end
-    acc / length(dataloader)
-end
-
-
-function train(model, train_data, val_data, args)
+function train(model, train_data, val_data, args; verbose = false)
     m = model.m
     train_data = args.device.(train_data)
     val_data = args.device.(val_data)
     m = args.device(m)
     loss(x, y) = logitcrossentropy(m(x), y)
-    opt = AdamW(args.η)
+    opt = AdamW(args.lr)
     for epoch in 1:args.epochs
         Flux.train!(loss, Flux.params(m), train_data, opt)
-        @show epoch
-        @show(loss_all(train_data, m))
-        @show accuracy_my(model_predict(model, val_data), val_data)
+        verbose || continue
+        println("epoch: $(epoch)")
+        println("loss: $(loss_all(train_data, m))")
+        println("val accuracy: $(accuracy(model_predict(model, val_data), labels_from_batched(val_data)))")
     end
     return m
 end
@@ -225,7 +195,7 @@ mutable struct Node
 end
 
 
-function model_fit(model::Decision_tree, X::DataFrame, y::AbstractArray)
+function model_fit!(model::Decision_tree, X::DataFrame, y::AbstractArray)
     model.root = build_tree(X, y; max_depth = model.max_depth, criterion = model.criterion)
 end
 
@@ -238,9 +208,9 @@ function model_predict(model::Decision_tree, tst::DataFrame)
         while !isnothing(root)
             feature_split = threshold_decision(entry[root.feature_name], root.threshold)
             label = root.label
-            root = feature_split == true ? root.right : root.left
+            root = feature_split == true ? root.left : root.right
         end
-        push!(predictions, label)
+        predictions = vcat(predictions, label)
     end
     return predictions
 end
@@ -318,12 +288,11 @@ function split_by_best_feature(X::DataFrame, y; criterion = gini)
     best_t
 end
 
-threshold_decision(data, t) = map(entry -> entry >= t, data)
+threshold_decision(data, t) = map(entry -> entry .>= t, data)
 information_gain(root, children, criterion) = criterion(root) - sum(criterion.(children))
 split_entropy_sum(parent, children, criterion) =
     sum(classes_rate(parent, children) .* criterion.(children))
 gini(data) = 1 - sum(classes_rate(data) .^ 2)
-entropy(data) = -sum(classes_rate(data) .* log.(classes_rate(data)))
-classes_rate(data) =
-    map(class_count -> class_count / length(data), values(sort(countmap(data))))
+entropy_local(data) = -sum(classes_rate(data) .* log.(classes_rate(data)))
+classes_rate(data) = values(sort(countmap(data))) ./ length(data)
 classes_rate(parent, children) = length.(children) ./ length(parent)

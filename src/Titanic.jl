@@ -27,9 +27,9 @@ export read_csv_data,
     random_split,
     K_nn,
     model_predict,
-    model_fit,
+    model_fit!,
     metric_dist,
-    accuracy_my,
+    accuracy,
     Log_reg,
     logistic_loss,
     logistic_loss_grad,
@@ -42,7 +42,9 @@ export read_csv_data,
     onehot,
     Metric,
     Neural_network,
-    batch
+    batch,
+    to_onehot,
+    entropy_local
 
 include("utils.jl")
 include("models.jl")
