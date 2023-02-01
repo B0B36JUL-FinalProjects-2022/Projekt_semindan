@@ -1,22 +1,18 @@
 export Decision_tree, gini, entropy_local
 
-mutable struct Decision_tree <: Model
-    max_depth::Any
-    criterion::Any
-    root::Any
-    function Decision_tree(; max_depth = 3, criterion = gini, root = nothing)
-        new(max_depth, criterion, root)
-    end
-end
+"""
+    Node(; depth = 0, left = nothing, right = nothing, decision_function = identity, feature_name = nothing, label = nothing, threshold = nothing)
 
+Decision node.
+"""
 mutable struct Node
-    left::Any
-    right::Any
-    depth::Any
-    decision_function::Any
-    feature_name::Any
-    threshold::Any
-    label::Any
+    left::Union{Node, Nothing}
+    right::Union{Node, Nothing}
+    depth::Int
+    decision_function::Function
+    feature_name::Union{String, Symbol}
+    threshold::Number
+    label::Int
     function Node(;
                   depth = 0,
                   left = nothing,
@@ -29,10 +25,35 @@ mutable struct Node
     end
 end
 
+"""
+    Decision_tree(; max_depth = 3, criterion = gini)
+
+Binary decision tree implementation.
+"""
+mutable struct Decision_tree <: Model
+    max_depth::Int
+    criterion::Function
+    root::Union{Node, Nothing}
+    function Decision_tree(; max_depth = 3, criterion = gini)
+        new(max_depth, criterion, nothing)
+    end
+end
+
+
+"""
+    model_fit!(model, X, y)
+
+Fits the model `model` to training data.
+"""
 function model_fit!(model::Decision_tree, X::DataFrame, y::AbstractArray)
     model.root = build_tree(X, y; max_depth = model.max_depth, criterion = model.criterion)
 end
 
+"""
+    model_predict(model, tst)
+
+Predicts the output for test data `tst` using the `model`.
+"""
 function model_predict(model::Decision_tree, tst::DataFrame)
     predictions = []
     for entry in eachrow(tst)
@@ -48,7 +69,12 @@ function model_predict(model::Decision_tree, tst::DataFrame)
     predictions
 end
 
-function build_tree(X, y; max_depth = 4, criterion = gini, cur_depth = 0)
+"""
+    build_tree(X, y; max_depth = 4, criterion = gini, cur_depth = 0)
+
+Builds the decision tree and returns the root.
+"""
+function build_tree(X::DataFrame, y::AbstractArray; max_depth = 4, criterion = gini, cur_depth = 0)
     cur_depth >= max_depth && return nothing
     left_split, left_labels, right_split, right_labels, feature_name, gain, t = split_by_best_feature(X,
                                                                                                       y)
@@ -73,7 +99,12 @@ function build_tree(X, y; max_depth = 4, criterion = gini, cur_depth = 0)
     root
 end
 
-function split_by_best_feature(X::DataFrame, y; criterion = gini)
+"""
+    function split_by_best_feature(X, y; criterion = gini)
+
+Splits the data by the feature and threshold yielding the highest information gain.
+"""
+function split_by_best_feature(X::DataFrame, y::AbstractArray; criterion = gini)
     original_entropy = criterion(y)
     best_gain = 0
     best_feature = nothing
@@ -114,12 +145,13 @@ function split_by_best_feature(X::DataFrame, y; criterion = gini)
     best_t
 end
 
-threshold_decision(data, t) = map(entry -> entry .>= t, data)
-information_gain(root, children, criterion) = criterion(root) - sum(criterion.(children))
-function split_entropy_sum(parent, children, criterion)
+threshold_decision(data::Real, t::Real) = data >= t
+threshold_decision(data::AbstractArray, t::Real) = map(entry -> entry .>= t, data)
+information_gain(root::AbstractArray, children::AbstractArray, criterion::Function) = criterion(root) - sum(criterion.(children))
+function split_entropy_sum(parent::AbstractArray, children::AbstractArray, criterion::Function)
     sum(classes_rate(parent, children) .* criterion.(children))
 end
-gini(data) = 1 - sum(classes_rate(data) .^ 2)
-entropy_local(data) = -sum(classes_rate(data) .* log.(classes_rate(data)))
-classes_rate(data) = values(sort(countmap(data))) ./ length(data)
-classes_rate(parent, children) = length.(children) ./ length(parent)
+gini(data::AbstractArray) = 1 - sum(classes_rate(data) .^ 2)
+entropy_local(data::AbstractArray) = -sum(classes_rate(data) .* log.(classes_rate(data)))
+classes_rate(data::AbstractArray) = values(sort(countmap(data))) ./ length(data)
+classes_rate(parent::AbstractArray, children::AbstractArray) = length.(children) ./ length(parent)

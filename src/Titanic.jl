@@ -8,10 +8,8 @@ using StatsPlots
 using Random
 using LinearAlgebra
 using Flux
-using Flux, Statistics
 using Flux.Data: DataLoader
-using Flux: onehotbatch, onecold, logitcrossentropy, throttle, @epochs
-using Base.Iterators: repeated
+using Flux: onehotbatch, onecold, logitcrossentropy
 using Parameters: @with_kw
 
 include("utils.jl")

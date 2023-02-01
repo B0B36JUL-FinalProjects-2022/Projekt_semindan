@@ -2,16 +2,17 @@ export model_predict, model_fit!
 
 abstract type Model end
 
-@doc """
+"""
     model_fit!(model, X, y)
     
-trains the model on the provided data
+Trains the model on the provided data.
 """
 function model_fit! end
-@doc """
+
+"""
     model_predict(model, X)
     
-makes a prediction on the data using the provided model
+Makes a prediction on the data using the provided model.
 """
 function model_predict end
 

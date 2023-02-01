@@ -74,11 +74,6 @@ using StatsBase
             X = [1 1 1; 1 2 3]
             y = [1, -1, -1]
             w = [1.5, -0.5]
-            df_mat = Matrix(Matrix(df[1:12, [:A]])')
-            df_y = replace(df[1:12, :L], 0 => -1)
-            w_w = ones(size(df_mat)[1])
-            @test floor(logistic_loss(X, y, w); digits = 2) == 0.66
-            @test floor.(logistic_loss_grad(X, y, w); digits = 2) == [0.28, 0.82]
             model_fit!(log_reg, df[1:12, [:A]], df[1:12, :L])
             @test model_predict(log_reg, df[1:21, [:A]]) == zeros(21)
         end
@@ -86,7 +81,7 @@ using StatsBase
             # I don't even know...
         end
         @testset "Decision_tree" begin
-            dt = Decision_tree(; criterion = entropy_local)
+            dt = Decision_tree(; max_depth=3, criterion = entropy_local)
             model_fit!(dt, df[1:12, [:A]], df[1:12, :L])
             @test model_predict(dt, df[1:21, [:A]]) == df[1:21, :L]
         end

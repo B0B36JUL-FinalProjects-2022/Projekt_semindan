@@ -1,5 +1,0 @@
-
-function read_data(folder)
-    CSV.read("$(folder)/train.csv", DataFrame; header=true)
-end
-

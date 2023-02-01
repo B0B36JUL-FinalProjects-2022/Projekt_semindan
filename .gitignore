@@ -1,2 +1,3 @@
-/Manifest.toml
-examples/.Conda*
+Manifest.toml
+test/Manifest.toml
+examples/Manifest.toml
