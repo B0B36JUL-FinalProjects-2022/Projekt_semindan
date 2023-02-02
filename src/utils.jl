@@ -137,7 +137,10 @@ function get_title_groups()
     [(default_titles, "D"), (royal_titles, "R"), (other_titles, "O")]
 end
 
-function replace_names_with_title_categories(df::DataFrame, groups::AbstractArray{Tuple{Vector{String}, String}})
+function replace_names_with_title_categories(df::DataFrame,
+                                             groups::AbstractArray{
+                                                                   Tuple{Vector{String},
+                                                                         String}})
     for group in groups
         transform!(df,
                    :Name => ByRow(entry -> any(occursin.(group[begin], entry)) ? group[end] : entry) => :Name)
@@ -170,7 +173,7 @@ end
 """
     to_onehot(df, cols; remove_original = false)
     
-translates the specified columns of a DataFrame to one-hot encoding  
+Translates the specified columns of a DataFrame to one-hot encoding  
 specify remove_original = true to keep the original column
 """
 
@@ -178,7 +181,8 @@ function to_onehot(df::DataFrame; remove_original = false)
     to_onehot(df, names(df); remove_original = remove_original)
 end
 
-function to_onehot(df::DataFrame, cols::Vector{<:Union{String, Symbol}}; remove_original = false)
+function to_onehot(df::DataFrame, cols::Vector{<:Union{String, Symbol}};
+                   remove_original = false)
     isempty(cols) && throw(ErrorException("Array of cols is empty"))
     df_local = df
     for col in cols
@@ -190,7 +194,7 @@ end
 function to_onehot(df::DataFrame, col::Union{String, Symbol}; remove_original = false)
     classes = unique(df[!, col])
     data_onehot = falses(nrow(df), length(unique(df[!, col])))
-    df_local = DataFrame() 
+    df_local = DataFrame()
     for (i, class) in enumerate(classes)
         data_onehot[df[!, col] .== class, i] .= 1
         df_local[!, string(col, "_", class)] = Int.(data_onehot[:, i])
@@ -201,7 +205,7 @@ end
 """
     accuracy(y1, y2)
     
-computes the accuracy of predictions
+Computes the accuracy of predictions
 """
 function accuracy(y1::AbstractArray, y2::AbstractArray)
     length(y1) != length(y2) ? throw(ErrorException("Arrays have different lengths")) :

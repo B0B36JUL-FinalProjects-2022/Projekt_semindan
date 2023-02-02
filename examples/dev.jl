@@ -44,7 +44,7 @@ model_fit!(nn, X, y)
 preds = model_predict(nn, tst_X)
 println(accuracy(tst[!, :Survived], preds))
 
-knn = K_nn(; metric=Titanic.lmax)
+knn = K_nn(; metric = Titanic.lmax)
 model_fit!(knn, X, y)
 preds = model_predict(knn, tst_X)
 println(accuracy(tst[!, :Survived], preds))

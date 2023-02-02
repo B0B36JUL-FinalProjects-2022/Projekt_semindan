@@ -4,7 +4,6 @@ using CSV
 using DataFrames
 using Statistics
 using StatsBase
-using StatsPlots
 using Random
 using LinearAlgebra
 using Flux

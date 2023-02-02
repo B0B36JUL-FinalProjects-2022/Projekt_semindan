@@ -116,7 +116,8 @@ end
 Trains the neural network on the training data.
 If `verbose` is `false` (default), the function runs silently, otherwise it outputs the loss and accuracy for each epoch.
 """
-function train!(model::Neural_network, train_data::DataLoader, val_data::DataLoader, args::Args; verbose = false)
+function train!(model::Neural_network, train_data::DataLoader, val_data::DataLoader,
+                args::Args; verbose = false)
     m = model.m
     train_data = args.device.(train_data)
     val_data = args.device.(val_data)

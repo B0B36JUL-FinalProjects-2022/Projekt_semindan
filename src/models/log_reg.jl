@@ -56,7 +56,9 @@ end
 
 Calculates the logistic loss of the given data `X`, ground truth `y` and model parameters `w`. Returns the logistic loss.
 """
-logistic_loss(X::AbstractMatrix, y::AbstractArray, w::AbstractArray) = length(y)^-1 * sum(log.(1 .+ exp.(-y .* (X' * w))))
+function logistic_loss(X::AbstractMatrix, y::AbstractArray, w::AbstractArray)
+    length(y)^-1 * sum(log.(1 .+ exp.(-y .* (X' * w))))
+end
 
 """
     logistic_loss_grad(X, y, w)

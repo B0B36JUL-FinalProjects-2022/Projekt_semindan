@@ -81,7 +81,7 @@ using StatsBase
             # I don't even know...
         end
         @testset "Decision_tree" begin
-            dt = Decision_tree(; max_depth=3, criterion = entropy_local)
+            dt = Decision_tree(; max_depth = 3, criterion = entropy_local)
             model_fit!(dt, df[1:12, [:A]], df[1:12, :L])
             @test model_predict(dt, df[1:21, [:A]]) == df[1:21, :L]
         end

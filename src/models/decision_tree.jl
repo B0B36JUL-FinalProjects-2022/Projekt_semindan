@@ -39,7 +39,6 @@ mutable struct Decision_tree <: Model
     end
 end
 
-
 """
     model_fit!(model, X, y)
 
@@ -74,7 +73,8 @@ end
 
 Builds the decision tree and returns the root.
 """
-function build_tree(X::DataFrame, y::AbstractArray; max_depth = 4, criterion = gini, cur_depth = 0)
+function build_tree(X::DataFrame, y::AbstractArray; max_depth = 4, criterion = gini,
+                    cur_depth = 0)
     cur_depth >= max_depth && return nothing
     left_split, left_labels, right_split, right_labels, feature_name, gain, t = split_by_best_feature(X,
                                                                                                       y)
@@ -147,11 +147,16 @@ end
 
 threshold_decision(data::Real, t::Real) = data >= t
 threshold_decision(data::AbstractArray, t::Real) = map(entry -> entry .>= t, data)
-information_gain(root::AbstractArray, children::AbstractArray, criterion::Function) = criterion(root) - sum(criterion.(children))
-function split_entropy_sum(parent::AbstractArray, children::AbstractArray, criterion::Function)
+function information_gain(root::AbstractArray, children::AbstractArray, criterion::Function)
+    criterion(root) - sum(criterion.(children))
+end
+function split_entropy_sum(parent::AbstractArray, children::AbstractArray,
+                           criterion::Function)
     sum(classes_rate(parent, children) .* criterion.(children))
 end
 gini(data::AbstractArray) = 1 - sum(classes_rate(data) .^ 2)
 entropy_local(data::AbstractArray) = -sum(classes_rate(data) .* log.(classes_rate(data)))
 classes_rate(data::AbstractArray) = values(sort(countmap(data))) ./ length(data)
-classes_rate(parent::AbstractArray, children::AbstractArray) = length.(children) ./ length(parent)
+function classes_rate(parent::AbstractArray, children::AbstractArray)
+    length.(children) ./ length(parent)
+end
